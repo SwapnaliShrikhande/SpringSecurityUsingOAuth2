@@ -1,0 +1,69 @@
+This project incorporates implementation of Spring Security oAuth2.0.
+
+== Build and Run
+Use Maven:
+
+mvn spring-boot:run
+
+== Usage
+Test the `welcome` endpoint
+
+curl http://localhost:8080/welcome
+
+You receive the following JSON response, which indicates you are not authorized to access the resource:
+
+```json
+{
+	"error":"unauthorized",
+	"error_description":"Full authentication is required to access this resource"
+}
+```
+
+In order to access the protected resource, you must first request an access token via the OAuth handshake. Request OAuth authorization:
+
+Example1: curl my-trusted-client:@localhost:8080/oauth/token -d grant_type=password -d username=Admin -d password=admin
+
+Example2: curl my-client-with-secret:secret@localhost:8080/oauth/token -d grant_type=client_credentials
+
+You can send request with various usernames, passwords and credentials as per mentioned in the code
+(Different users are: Admin, Superuser, User and Guest)
+
+A successful authorization results in the following JSON response:
+
+```Example json
+{	
+	"access_token":"cae0a256-b43c-4a82-b3b6-04787e87daa3",
+	"token_type":"bearer",
+	"refresh_token":"fa346f8a-46a8-4d03-9873-a68507f9f2ea",
+	"expires_in":4999,
+	"scope":"write trust"
+}
+```
+
+Use the `access_token` returned in the previous request to make the authorized request to the protected endpoint:
+
+curl http://localhost:8080/welcome -H "Authorization: Bearer cae0a256-b43c-4a82-b3b6-04787e87daa3"
+
+You can request `bookings` APIs as well. (/bookings/bookings, /bookings/update, etc.)
+If the request is successful, you will see the following JSON response:
+
+```json
+[
+	{"id":1,"bookingName":"Swapnali"},
+	{"id":2,"bookingName":"Akash"},
+	{"id":3,"bookingName":"Taylor"}
+]
+```
+
+After the specified time period, the `access_token` will expire. Use the `refresh_token` that was returned in the original OAuth authorization to retrieve a new `access_token`:
+
+curl my-trusted-client:@localhost:8080/oauth/token -d grant_type=refresh_token -d refresh_token=fa346f8a-46a8-4d03-9873-a68507f9f2ea
+
+== SSL
+
+To configure the project to run on HTTPS [Building REST services with Spring], enable the `https` profile. You can do this by uncommenting the appropriate line in the application.properties file of this project.
+
+curl -k my-trusted-client:@localhost:8080/oauth/token -d grant_type=password -d username=Admin -d password=admin
+
+The `-k` parameter is necessary to allow connections to SSL sites without valid certificates.
+
